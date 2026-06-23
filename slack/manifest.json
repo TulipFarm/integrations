@@ -9,18 +9,78 @@
     "command": "npx",
     "args": ["-y", "@modelcontextprotocol/server-slack"]
   },
+  "setup_guide_path": "SETUP.md",
   "required_env": [
     {
       "name": "SLACK_BOT_TOKEN",
       "label": "Bot Token",
-      "description": "xoxb-... token from your Slack app (OAuth & Permissions → Bot Token Scopes).",
-      "secret": true
+      "description": "xoxb-... token from your Slack app. Fill this to connect directly, or use OAuth below.",
+      "secret": true,
+      "steps": [
+        "Go to api.slack.com/apps and open your app",
+        "Click OAuth & Permissions → Install to workspace",
+        "Copy the Bot User OAuth Token (xoxb-...)"
+      ],
+      "setup_url": "https://api.slack.com/apps"
     },
     {
       "name": "SLACK_TEAM_ID",
       "label": "Team ID",
-      "description": "Your Slack workspace ID (Settings & administration → Workspace settings → shown in the URL as T...).",
-      "secret": false
+      "description": "Your workspace ID — starts with T (e.g. T012AB3CD).",
+      "secret": false,
+      "steps": [
+        "Open Slack in a browser",
+        "Go to your workspace settings",
+        "The Team ID is shown in the URL as the T... segment"
+      ],
+      "setup_url": "https://api.slack.com/methods/auth.test"
+    },
+    {
+      "name": "SLACK_CLIENT_ID",
+      "label": "OAuth Client ID",
+      "description": "App credentials → Client ID. Required only for OAuth flow.",
+      "secret": false,
+      "steps": [
+        "Go to api.slack.com/apps and open your app",
+        "Click Basic Information → App Credentials",
+        "Copy the Client ID"
+      ],
+      "setup_url": "https://api.slack.com/apps"
+    },
+    {
+      "name": "SLACK_CLIENT_SECRET",
+      "label": "OAuth Client Secret",
+      "description": "App credentials → Client Secret. Required only for OAuth flow.",
+      "secret": true,
+      "steps": [
+        "Go to api.slack.com/apps and open your app",
+        "Click Basic Information → App Credentials",
+        "Copy the Client Secret"
+      ],
+      "setup_url": "https://api.slack.com/apps"
     }
-  ]
+  ],
+  "oauth": {
+    "authorization_url": "https://slack.com/oauth/v2/authorize",
+    "token_url": "https://slack.com/api/oauth.v2.access",
+    "scopes": [
+      "channels:history",
+      "channels:read",
+      "chat:write",
+      "groups:history",
+      "groups:read",
+      "im:history",
+      "im:read",
+      "mpim:history",
+      "mpim:read",
+      "reactions:read",
+      "reactions:write",
+      "users:read",
+      "users:read.email"
+    ],
+    "client_id_env": "SLACK_CLIENT_ID",
+    "client_secret_env": "SLACK_CLIENT_SECRET",
+    "token_env": "SLACK_BOT_TOKEN",
+    "token_response_path": "access_token"
+  }
 }
