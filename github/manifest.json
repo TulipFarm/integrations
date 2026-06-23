@@ -1,0 +1,20 @@
+{
+  "name": "github",
+  "type": "mcp",
+  "version": "1.0.0",
+  "description": "Read and manage GitHub repositories, issues, pull requests, and code from TulipFarm agents.",
+  "maintainer": "TulipFarm",
+  "entry": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"]
+  },
+  "required_env": [
+    {
+      "name": "GITHUB_PERSONAL_ACCESS_TOKEN",
+      "label": "Personal Access Token",
+      "description": "GitHub PAT with repo, issues, and pull_requests scopes (Settings → Developer settings → Personal access tokens).",
+      "secret": true
+    }
+  ]
+}
