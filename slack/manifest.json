@@ -1,0 +1,26 @@
+{
+  "name": "slack",
+  "type": "mcp",
+  "version": "1.0.0",
+  "description": "Send messages, read channels, and search Slack from TulipFarm agents.",
+  "maintainer": "TulipFarm",
+  "entry": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-slack"]
+  },
+  "required_env": [
+    {
+      "name": "SLACK_BOT_TOKEN",
+      "label": "Bot Token",
+      "description": "xoxb-... token from your Slack app (OAuth & Permissions → Bot Token Scopes).",
+      "secret": true
+    },
+    {
+      "name": "SLACK_TEAM_ID",
+      "label": "Team ID",
+      "description": "Your Slack workspace ID (Settings & administration → Workspace settings → shown in the URL as T...).",
+      "secret": false
+    }
+  ]
+}

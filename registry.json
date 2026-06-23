@@ -1,3 +1,5 @@
 {
-  "integrations": []
+  "integrations": [
+    { "name": "slack", "verified": true }
+  ]
 }
