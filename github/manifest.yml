@@ -1,0 +1,60 @@
+name: github
+version: 1.0.0
+description: Read and manage GitHub repositories, issues, pull requests, and code from TulipFarm agents.
+maintainer: TulipFarm
+
+egress:
+  type: mcp
+  entry:
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-github"]
+
+setup_guide_path: SETUP.md
+
+required_env:
+  - name: GITHUB_PERSONAL_ACCESS_TOKEN
+    label: Personal Access Token
+    description: "GitHub PAT with repo and other scopes. Fill this to connect directly, or use OAuth below."
+    secret: true
+    steps:
+      - Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+      - Click Generate new token (classic)
+      - Select scopes — repo, read:org, read:user
+      - Click Generate token and copy the value
+    setup_url: https://github.com/settings/tokens/new
+
+  - name: GITHUB_CLIENT_ID
+    label: OAuth Client ID
+    description: GitHub OAuth App Client ID. Required only for OAuth flow.
+    secret: false
+    steps:
+      - Go to GitHub Settings → Developer settings → OAuth Apps
+      - Click New OAuth App
+      - Set Authorization callback URL to your TulipFarm callback (see SETUP.md)
+      - Click Register application, then copy the Client ID
+    setup_url: https://github.com/settings/developers
+
+  - name: GITHUB_CLIENT_SECRET
+    label: OAuth Client Secret
+    description: GitHub OAuth App Client Secret. Required only for OAuth flow.
+    secret: true
+    steps:
+      - Open your OAuth App in GitHub Settings → Developer settings → OAuth Apps
+      - Click Generate a new client secret and copy it
+    setup_url: https://github.com/settings/developers
+
+oauth:
+  flows:
+    authorizationCode:
+      authorizationUrl: https://github.com/login/oauth/authorize
+      tokenUrl: https://github.com/login/oauth/access_token
+      scopes:
+        repo: Read and write repositories, issues, and pull requests
+        "read:org": Read organization membership
+        "read:user": Read user profile
+  x-tulipfarm:
+    client_id_env: GITHUB_CLIENT_ID
+    client_secret_env: GITHUB_CLIENT_SECRET
+    token_env: GITHUB_PERSONAL_ACCESS_TOKEN
+    token_response_path: access_token

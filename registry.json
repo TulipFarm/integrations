@@ -1,5 +1,6 @@
 {
   "integrations": [
-    { "name": "slack", "verified": true }
+    { "name": "slack", "verified": true },
+    { "name": "github", "verified": true }
   ]
 }
