@@ -1,0 +1,315 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tulipfarm.dev/schemas/manifest.schema.json",
+  "title": "TulipFarm Integration Manifest",
+  "description": "Schema for manifest.yml files in the TulipFarm integrations repo.",
+  "type": "object",
+  "required": ["name", "egress"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Integration type identifier (lowercase, hyphen-separated).",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version string.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short human-readable description of what the integration does."
+    },
+    "maintainer": {
+      "type": "string",
+      "description": "Name or org of the integration maintainer."
+    },
+    "setup_guide_path": {
+      "type": "string",
+      "description": "Path to a Markdown setup guide relative to the integration directory."
+    },
+    "egress": {
+      "description": "How TulipFarm agents call out to this integration.",
+      "oneOf": [
+        { "$ref": "#/$defs/egress_mcp" },
+        { "$ref": "#/$defs/egress_openapi" },
+        { "$ref": "#/$defs/egress_ts_code" }
+      ]
+    },
+    "ingress": {
+      "description": "How this integration pushes events into TulipFarm.",
+      "oneOf": [
+        { "$ref": "#/$defs/ingress_asyncapi" },
+        { "$ref": "#/$defs/ingress_ts_code" },
+        { "$ref": "#/$defs/ingress_none" }
+      ]
+    },
+    "required_env": {
+      "type": "array",
+      "description": "Environment variables the user must configure to connect this integration.",
+      "items": { "$ref": "#/$defs/required_env_var" }
+    },
+    "oauth": {
+      "$ref": "#/$defs/oauth_config",
+      "description": "OAuth 2.0 configuration for integrations that use an OAuth flow."
+    }
+  },
+  "$defs": {
+    "egress_mcp": {
+      "type": "object",
+      "required": ["type", "entry"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "mcp" },
+        "entry": {
+          "oneOf": [
+            { "$ref": "#/$defs/mcp_entry_stdio" },
+            { "$ref": "#/$defs/mcp_entry_sse" }
+          ]
+        }
+      }
+    },
+    "egress_openapi": {
+      "type": "object",
+      "required": ["type", "spec"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "openapi" },
+        "spec": {
+          "type": "string",
+          "description": "Path to an OpenAPI 3.x YAML/JSON file relative to the integration directory."
+        }
+      }
+    },
+    "egress_ts_code": {
+      "type": "object",
+      "required": ["type", "handler", "toolsSpec"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "ts-code" },
+        "handler": {
+          "type": "string",
+          "description": "Path to the TypeScript handler file (e.g. egressHook.ts)."
+        },
+        "toolsSpec": {
+          "type": "string",
+          "description": "Path to a JSON file declaring the tool definitions for this egress handler."
+        }
+      }
+    },
+    "mcp_entry_stdio": {
+      "type": "object",
+      "required": ["transport", "command"],
+      "additionalProperties": false,
+      "properties": {
+        "transport": { "const": "stdio" },
+        "command": { "type": "string", "description": "Executable to spawn." },
+        "args": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Command-line arguments."
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Additional environment variables to pass to the subprocess."
+        }
+      }
+    },
+    "mcp_entry_sse": {
+      "type": "object",
+      "required": ["transport", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "transport": { "const": "sse" },
+        "url": { "type": "string", "format": "uri", "description": "SSE endpoint URL." },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "HTTP headers to include in SSE connection requests."
+        }
+      }
+    },
+    "ingress_asyncapi": {
+      "type": "object",
+      "required": ["type", "spec"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "asyncapi" },
+        "spec": {
+          "type": "string",
+          "description": "Path to an AsyncAPI 2.x YAML file relative to the integration directory."
+        },
+        "webhook": { "$ref": "#/$defs/webhook_config" }
+      }
+    },
+    "ingress_ts_code": {
+      "type": "object",
+      "required": ["type", "handler"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "ts-code" },
+        "handler": {
+          "type": "string",
+          "description": "Path to the TypeScript ingress handler file (e.g. ingressHook.ts). Must export handle(payload, ctx): IngressAction[]."
+        },
+        "webhook": { "$ref": "#/$defs/webhook_config" }
+      }
+    },
+    "ingress_none": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "none" }
+      }
+    },
+    "webhook_config": {
+      "type": "object",
+      "required": ["path"],
+      "additionalProperties": false,
+      "description": "Webhook endpoint configuration for receiving events from the integration.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "URL path suffix appended to /api/v1/webhooks/{slug}.",
+          "pattern": "^/.*"
+        },
+        "security": {
+          "oneOf": [
+            { "$ref": "#/$defs/webhook_security_hmac" },
+            { "$ref": "#/$defs/webhook_security_none" }
+          ]
+        },
+        "dedup_header": {
+          "type": "string",
+          "description": "HTTP header whose value is used to deduplicate webhook deliveries."
+        },
+        "verification_protocol": {
+          "type": "string",
+          "enum": ["slack", "github"],
+          "description": "Built-in protocol handler for initial webhook verification handshakes."
+        }
+      }
+    },
+    "webhook_security_hmac": {
+      "type": "object",
+      "required": ["type", "header", "secret_env"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "hmac_sha256" },
+        "header": {
+          "type": "string",
+          "description": "HTTP header containing the HMAC signature (e.g. X-Slack-Signature)."
+        },
+        "secret_env": {
+          "type": "string",
+          "description": "Environment variable holding the HMAC signing secret."
+        }
+      }
+    },
+    "webhook_security_none": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "none" }
+      }
+    },
+    "required_env_var": {
+      "type": "object",
+      "required": ["name", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Exact environment variable name (e.g. SLACK_BOT_TOKEN)."
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable label shown in the TulipFarm UI."
+        },
+        "description": {
+          "type": "string",
+          "description": "Additional context shown below the field in the UI."
+        },
+        "secret": {
+          "type": "boolean",
+          "description": "When true the value is masked in the UI. Default: false.",
+          "default": false
+        },
+        "setup_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to the external page where the user can obtain this value."
+        },
+        "steps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ordered steps guiding the user to obtain this value."
+        }
+      }
+    },
+    "oauth_config": {
+      "type": "object",
+      "required": ["flows", "x-tulipfarm"],
+      "additionalProperties": false,
+      "properties": {
+        "flows": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "authorizationCode": { "$ref": "#/$defs/oauth_flow" },
+            "clientCredentials": { "$ref": "#/$defs/oauth_flow" }
+          }
+        },
+        "x-tulipfarm": {
+          "type": "object",
+          "required": ["client_id_env", "client_secret_env", "token_env"],
+          "additionalProperties": false,
+          "properties": {
+            "client_id_env": {
+              "type": "string",
+              "description": "Env var name holding the OAuth client ID."
+            },
+            "client_secret_env": {
+              "type": "string",
+              "description": "Env var name holding the OAuth client secret."
+            },
+            "token_env": {
+              "type": "string",
+              "description": "Env var name where the obtained access token is stored."
+            },
+            "token_response_path": {
+              "type": "string",
+              "description": "JSON path within the token response body to extract the access token (default: access_token)."
+            }
+          }
+        }
+      }
+    },
+    "oauth_flow": {
+      "type": "object",
+      "required": ["authorizationUrl", "tokenUrl", "scopes"],
+      "additionalProperties": false,
+      "properties": {
+        "authorizationUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to redirect the user to for authorization."
+        },
+        "tokenUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to exchange the authorization code for an access token."
+        },
+        "scopes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Map of scope name → human-readable description."
+        }
+      }
+    }
+  }
+}
